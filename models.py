@@ -1,23 +1,34 @@
-from sqlmodel import Column, Integer, String, SQLModel, Field
+from typing import Optional, List
+
+from sqlalchemy import Column, Integer, String
+from sqlmodel import Field, SQLModel
 
 from app.services.db_service import DBService
 
 
 class Player(SQLModel, table=True):
-    id: int = Column(Integer, primary_key=True)
-    username: str = Column(String, unique=True, index=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    username: str = Field(sa_column=Column("username", String, unique=True, index=True))
 
-    def __repr__(self):
-        return f"<Player(name={self.name}, age={self.age}, team={self.team})>"
+    def __repr__(self) -> str:
+        return f"<Player(username={self.username})>"
+
 
 class Game(SQLModel, table=True):
-    id: int = Column(Integer, primary_key=True)
-    name: str = Column(String, unique=True, index=True)
-    stage: str = Column(Integer, default=1)
-    players: list[Player] = Field(default_factory=list, foreign_key="player.id")
-    
-    def __repr__(self):
-        return f"<Game(name={self.name})>"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    room_master_id: Optional[int] = Field(default=None, foreign_key="player.id")
+    name: str = Field(sa_column=Column("name", String, unique=True, index=True))
+    stage: int = Field(default=1)
+
+    def __repr__(self) -> str:
+        return f"<Game(name={self.name}, stage={self.stage})>"
+
+class GamePlayerLink(SQLModel, table=True):
+    game_id: Optional[int] = Field(default=None, foreign_key="game.id", primary_key=True)
+    player_id: Optional[int] = Field(default=None, foreign_key="player.id", primary_key=True)
+
+    def __repr__(self) -> str:
+        return f"<GamePlayerLink(game_id={self.game_id}, player_id={self.player_id})>"
 
 
 def init_db():

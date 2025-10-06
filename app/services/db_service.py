@@ -42,7 +42,7 @@ class DBService:
     def execute(self, statement: str, params: dict[str, Any] | None = None):
         with self.engine.begin() as connection:
             result = connection.execute(text(statement), params or {})
-            return result.all()
+            return result.fetchall() if result.returns_rows else None
 
     def query(self, query: str, params: dict[str, Any] | None = None):
         return self.execute(query, params)

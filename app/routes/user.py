@@ -6,7 +6,6 @@ router = APIRouter(prefix="/user", tags=["user"])
 
 @router.post("/create")
 async def create_user(username: str):
-    db_service = DBService()
-    player_service = PlayerService(db_service)
+    player_service = PlayerService()
     result = player_service.create_player(username)
     return {"status": "success", "data": result}
