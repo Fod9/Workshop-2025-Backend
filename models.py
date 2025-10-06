@@ -23,6 +23,16 @@ class Game(SQLModel, table=True):
     def __repr__(self) -> str:
         return f"<Game(name={self.name}, stage={self.stage})>"
 
+class Invitattion(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    from_player_id: Optional[int] = Field(default=None, foreign_key="player.id")
+    to_player_id: Optional[int] = Field(default=None, foreign_key="player.id")
+    game_id: Optional[int] = Field(default=None, foreign_key="game.id")
+    status: str = Field(default="pending")  # pending, accepted, rejected
+
+    def __repr__(self) -> str:
+        return f"<Invitation(from_player_id={self.from_player_id}, to_player_id={self.to_player_id}, game_id={self.game_id})>"
+
 class GamePlayerLink(SQLModel, table=True):
     game_id: Optional[int] = Field(default=None, foreign_key="game.id", primary_key=True)
     player_id: Optional[int] = Field(default=None, foreign_key="player.id", primary_key=True)

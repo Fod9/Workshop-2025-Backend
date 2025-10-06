@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes.room import router as room_router
+from app.routes.game import router as room_router
 from app.routes.user import router as user_router
 from app.services.db_service import DBService
 
