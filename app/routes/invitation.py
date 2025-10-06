@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from services.invitation_service import InvitationService
+from services.game_service import GameService
 
 router = APIRouter(prefix="/invitation", tags=["invitation"])
 
@@ -15,7 +16,13 @@ async def respond_invitation(invitation_id: int, accept: bool):
     invitation_service = InvitationService()
     if accept:
         invitation = invitation_service.accept_invitation(invitation_id)
-        return {"status": "success", "data": invitation}
+        game_service = GameService()
+        game_service.add_player_to_game(invitation.game_id, invitation.to_player_id)
+        return {"status": "success", "data": {
+            "invitation": invitation,
+            "game_id": invitation.game_id,
+            "player_id": invitation.to_player_id
+        }}
     else:
         invitation = invitation_service.reject_invitation(invitation_id)
         return {"status": "success", "data": invitation}

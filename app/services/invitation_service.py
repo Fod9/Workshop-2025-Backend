@@ -31,3 +31,8 @@ class InvitationService:
             session.add(invitation)
             session.commit()
             return invitation
+
+    def get_invitations_for_player(self, player_id: int):
+        with self.db_service.session() as session:
+            invitations = session.query(Invitation).filter(Invitation.to_player_id == player_id).all()
+            return invitations
