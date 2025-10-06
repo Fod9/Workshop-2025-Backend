@@ -1,44 +1,32 @@
-from typing import Optional, List
+from typing import List, Optional
 
-from sqlalchemy import Column, Integer, String
-from sqlmodel import Field, SQLModel
+from sqlalchemy import Column, String
+from sqlmodel import Field, Relationship, SQLModel
 
 from app.services.db_service import DBService
 
-
-class Player(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    username: str = Field(sa_column=Column("username", String, unique=True, index=True))
-
-    def __repr__(self) -> str:
-        return f"<Player(username={self.username})>"
-
-
 class Game(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    room_master_id: Optional[int] = Field(default=None, foreign_key="player.id")
     name: str = Field(sa_column=Column("name", String, unique=True, index=True))
     stage: int = Field(default=1)
+    join_code: str = Field(sa_column=Column("join_code", String, unique=True, index=True))
+    host_name: str = Field(sa_column=Column("host_name", String, index=True))
+    participants: List["Participant"] = Relationship(back_populates="game", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
     def __repr__(self) -> str:
-        return f"<Game(name={self.name}, stage={self.stage})>"
+        return f"<Game(name={self.name}, stage={self.stage}, join_code={self.join_code})>"
 
-class Invitation(SQLModel, table=True):
+
+class Participant(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    from_player_id: Optional[int] = Field(default=None, foreign_key="player.id")
-    to_player_id: Optional[int] = Field(default=None, foreign_key="player.id")
-    game_id: Optional[int] = Field(default=None, foreign_key="game.id")
-    status: str = Field(default="pending")  # pending, accepted, rejected
+    game_id: int = Field(foreign_key="game.id")
+    name: str = Field(sa_column=Column("name", String, index=True))
+    is_host: bool = Field(default=False)
+
+    game: Optional[Game] = Relationship(back_populates="participants")
 
     def __repr__(self) -> str:
-        return f"<Invitation(from_player_id={self.from_player_id}, to_player_id={self.to_player_id}, game_id={self.game_id})>"
-
-class GamePlayerLink(SQLModel, table=True):
-    game_id: Optional[int] = Field(default=None, foreign_key="game.id", primary_key=True)
-    player_id: Optional[int] = Field(default=None, foreign_key="player.id", primary_key=True)
-
-    def __repr__(self) -> str:
-        return f"<GamePlayerLink(game_id={self.game_id}, player_id={self.player_id})>"
+        return f"<Participant(name={self.name}, game_id={self.game_id}, is_host={self.is_host})>"
 
 
 def init_db():
