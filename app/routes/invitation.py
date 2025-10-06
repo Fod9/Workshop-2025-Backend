@@ -26,3 +26,4 @@ async def respond_invitation(invitation_id: int, accept: bool):
     else:
         invitation = invitation_service.reject_invitation(invitation_id)
         return {"status": "success", "data": invitation}
+    

@@ -23,7 +23,7 @@ class Game(SQLModel, table=True):
     def __repr__(self) -> str:
         return f"<Game(name={self.name}, stage={self.stage})>"
 
-class Invitattion(SQLModel, table=True):
+class Invitation(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     from_player_id: Optional[int] = Field(default=None, foreign_key="player.id")
     to_player_id: Optional[int] = Field(default=None, foreign_key="player.id")
