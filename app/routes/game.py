@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.services.websocket_manager import manager
+from fastapi import WebSocket, WebSocketDisconnect
 from app.services.game_service import GameService
 
 router = APIRouter(prefix="/game", tags=["game"])
@@ -25,6 +27,16 @@ async def create_game(payload: GameCreatePayload):
     return {"status": "success", "data": game}
 
 
+@router.post("/delete")
+async def delete_game(payload: GameJoinPayload):
+    game_service = GameService()
+    try:
+        game = game_service.delete_game(payload.join_code, payload.name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "success", "data": game}
+
+
 @router.post("/join")
 async def join_game(payload: GameJoinPayload):
     game_service = GameService()
@@ -33,3 +45,15 @@ async def join_game(payload: GameJoinPayload):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"status": "success", "data": game}
+
+
+@router.websocket("/ws/{game_id}")
+async def websocket_endpoint(websocket: WebSocket, game_id: int):
+    await manager.connect(websocket, game_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.broadcast(f"Message text was: {data}", game_id)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        await manager.broadcast(f"Client left the game", game_id)

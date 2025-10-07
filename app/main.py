@@ -3,9 +3,11 @@ from app.routes.game import router as game_router
 from app.services.db_service import DBService
 from fastapi.middleware.cors import CORSMiddleware
 
-# cors settings
+
+
+#cors settings
 origins = [
-    "*",
+    "http://localhost:5173",
 ]
 
 db_service = DBService()
@@ -20,5 +22,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 app.include_router(game_router)

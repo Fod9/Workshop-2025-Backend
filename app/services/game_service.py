@@ -49,6 +49,21 @@ class GameService:
             session.refresh(game)
             return game
 
+    def delete_game(self, join_code: str, host_name: str) -> Game:
+        join_code = join_code.strip().upper()
+        with self.db_service.session() as session:
+            game = session.exec(
+                select(Game).where(Game.join_code == join_code)
+            ).first()
+            if game is None:
+                raise ValueError("Invalid join code")
+            if game.host_name != host_name:
+                raise ValueError("Only the host can delete the game")
+
+            session.delete(game)
+            session.commit()
+            return game
+
     def list_participants(self, game_id: int) -> List[Participant]:
         with self.db_service.session() as session:
             return session.exec(
