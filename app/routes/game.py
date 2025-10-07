@@ -1,8 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 from app.services.websocket_manager import ConnectionManager
-from fastapi import WebSocket, WebSocketDisconnect
 from app.services.game_service import GameService
 
 router = APIRouter(prefix="/game", tags=["game"])
@@ -44,21 +43,32 @@ async def join_game(payload: GameJoinPayload):
     game_service = GameService()
     try:
         game = game_service.join_game_by_code(payload.join_code, payload.name)
-
-        await manager.connect(websocket, game.id)
-        await manager.broadcast(f"{payload.name} joined the game", game.id)
+        
+        return {
+            "status": "success", 
+            "data": {
+                **game.__dict__,
+                "websocket_url": f"/game/ws/{game.id}"
+            }
+        }
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return {"status": "success", "data": game}
 
 
 @router.websocket("/ws/{game_id}")
-async def websocket_endpoint(websocket: WebSocket, game_id: int):
-    await manager.connect(websocket, game_id)
+async def websocket_endpoint(websocket: WebSocket, game_id: int, player_name: str = None):
+    await manager.connect(websocket, game_id, player_name)
+    
+    if player_name:
+        await manager.broadcast(f"{player_name} joined the game", game_id)
+    
     try:
         while True:
             data = await websocket.receive_text()
-            await manager.broadcast(f"Message text was: {data}", game_id)
+            player = manager.get_player_name(websocket)
+            await manager.broadcast(f"{player}: {data}", game_id)
     except WebSocketDisconnect:
+        player_name = manager.get_player_name(websocket)
         manager.disconnect(websocket)
-        await manager.broadcast(f"Client left the game", game_id)
+        if player_name != "Unknown Player":
+            await manager.broadcast(f"{player_name} left the game", game_id)
