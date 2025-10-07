@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.services.websocket_manager import manager
+from app.services.websocket_manager import ConnectionManager
 from fastapi import WebSocket, WebSocketDisconnect
 from app.services.game_service import GameService
 
 router = APIRouter(prefix="/game", tags=["game"])
+
+manager = ConnectionManager()
 
 class GameCreatePayload(BaseModel):
     name: str
