@@ -25,3 +25,11 @@ app.add_middleware(
 
 
 app.include_router(game_router)
+
+
+#route to delete database - for testing purposes only
+@app.delete("/reset-database")
+async def reset_database():
+    db_service.drop_database()
+    db_service.create_database()
+    return {"status": "success", "message": "Database reset successfully"}
