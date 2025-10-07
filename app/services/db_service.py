@@ -46,3 +46,12 @@ class DBService:
 
     def query(self, query: str, params: dict[str, Any] | None = None):
         return self.execute(query, params)
+
+    def drop_database(self) -> None:
+        #delete everything in the database
+        from sqlmodel import SQLModel
+        SQLModel.metadata.drop_all(self._engine)
+
+
+        
+
