@@ -44,17 +44,25 @@ async def delete_game(payload: GameJoinPayload):
 async def join_game(payload: GameJoinPayload):
     game_service = GameService()
     try:
-        game = game_service.join_game_by_code(payload.join_code, payload.name)
-        
-        return {
-            "status": "success", 
-            "data": {
-                **game.__dict__,
-                "websocket_url": f"/game/ws/{game.id}"
-            }
-        }
+        game = await game_service.join_game_by_code(payload.join_code, payload.name, manager)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    game_read = GameRead.model_validate(game)
+    data = game_read.model_dump()
+    data["websocket_url"] = f"/game/ws/{game.id}"
+
+    return {"status": "success", "data": data}
+
+@router.post("/continue/{game_id}")
+async def continue_game(game_id: int):
+    game_service = GameService()
+    try:
+        game = await game_service.continue_game(game_id, manager)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    game_read = GameRead.model_validate(game)
+    return {"status": "success", "data": game_read.model_dump()}
 
 
 @router.websocket("/ws/{game_id}")

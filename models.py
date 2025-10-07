@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 from pydantic import ConfigDict
 
@@ -9,7 +9,7 @@ from app.services.db_service import DBService
 class Game(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(sa_column=Column("name", String, unique=True, index=True))
-    stage: int = Field(default=1)
+    stage: int = Field(default=0)
     join_code: str = Field(sa_column=Column("join_code", String, unique=True, index=True))
     host_name: str = Field(sa_column=Column("host_name", String, index=True))
     players: List["Player"] = Relationship(
@@ -26,6 +26,9 @@ class Game(SQLModel, table=True):
 
 class Player(SQLModel, table=True):
     __tablename__ = "participant"
+    __table_args__ = (
+        UniqueConstraint("game_id", "continent", name="uq_player_game_continent"),
+    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     game_id: int = Field(foreign_key="game.id")

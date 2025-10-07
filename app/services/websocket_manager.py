@@ -26,6 +26,7 @@ class ConnectionManager():
     async def broadcast(self, message: str, game_id: int):
         if game_id in self.active_connections:
             for websocket, player_name in self.active_connections[game_id]:
+                print(f"Sending to {player_name}: {message}")  # Debugging line
                 await websocket.send_text(message)
     
     def get_player_name(self, websocket: WebSocket) -> str:
