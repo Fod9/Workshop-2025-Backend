@@ -26,7 +26,7 @@ class GameService:
             session.refresh(game)
             return game
 
-    def join_game_by_code(self, join_code: str, participant_name: str) -> Game:
+    def     join_game_by_code(self, join_code: str, participant_name: str) -> Game:
         join_code = join_code.strip().upper()
         with self.db_service.session() as session:
             game = session.exec(
