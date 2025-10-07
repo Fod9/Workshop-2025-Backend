@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from app.services.websocket_manager import ConnectionManager
 from fastapi import WebSocket, WebSocketDisconnect
 from app.services.game_service import GameService
+from models import GameRead
 
 router = APIRouter(prefix="/game", tags=["game"])
 
@@ -24,9 +25,10 @@ async def create_game(payload: GameCreatePayload):
     game_service = GameService()
     try:
         game = game_service.create_game(payload.name, payload.host_name)
-    except ValueError as exc:  # invalid player
+    except ValueError as exc: 
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return {"status": "success", "data": game}
+    game_read = GameRead.model_validate(game)
+    return {"status": "success", "data": game_read.model_dump()}
 
 
 @router.post("/delete")
@@ -46,7 +48,8 @@ async def join_game(payload: GameJoinPayload):
         game = game_service.join_game_by_code(payload.join_code, payload.name)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return {"status": "success", "data": game}
+    game_read = GameRead.model_validate(game)
+    return {"status": "success", "data": game_read.model_dump()}
 
 
 @router.websocket("/ws/{game_id}")

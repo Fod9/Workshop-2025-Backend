@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import random
 import secrets
 import string
 from typing import List, Optional
 
 from sqlmodel import select
-
 from app.services.db_service import DBService
-from models import Game, Participant
+from models import Game, Player
 
 
 class GameService:
@@ -21,12 +21,21 @@ class GameService:
             session.add(game)
             session.flush()
 
-            session.add(Participant(game_id=game.id, name=host_name, is_host=True))
+            continent = self._assign_continent(session, game.id)
+            session.add(
+                Player(
+                    game_id=game.id,
+                    name=host_name,
+                    is_host=True,
+                    continent=continent,
+                )
+            )
             session.commit()
             session.refresh(game)
+            session.refresh(game, attribute_names=["players"])
             return game
 
-    def join_game_by_code(self, join_code: str, participant_name: str) -> Game:
+    def join_game_by_code(self, join_code: str, player_name: str) -> Game:
         join_code = join_code.strip().upper()
         with self.db_service.session() as session:
             game = session.exec(
@@ -36,18 +45,24 @@ class GameService:
                 raise ValueError("Invalid join code")
 
             existing_name = session.exec(
-                select(Participant)
-                .where(Participant.game_id == game.id)
-                .where(Participant.name == participant_name)
+                select(Player)
+                .where(Player.game_id == game.id)
+                .where(Player.name == player_name)
             ).first()
             if existing_name:
                 raise ValueError("Name already taken in this game")
 
-            participant = Participant(game_id=game.id, name=participant_name, is_host=False)
-            participant.pick_random_continent()
-            session.add(participant)
+            continent = self._assign_continent(session, game.id)
+            player = Player(
+                game_id=game.id,
+                name=player_name,
+                is_host=False,
+                continent=continent,
+            )
+            session.add(player)
             session.commit()
             session.refresh(game)
+            session.refresh(game, attribute_names=["players"])
             return game
 
     def delete_game(self, join_code: str, host_name: str) -> Game:
@@ -65,10 +80,10 @@ class GameService:
             session.commit()
             return game
 
-    def list_participants(self, game_id: int) -> List[Participant]:
+    def list_players(self, game_id: int) -> List[Player]:
         with self.db_service.session() as session:
             return session.exec(
-                select(Participant).where(Participant.game_id == game_id)
+                select(Player).where(Player.game_id == game_id)
             ).all()
 
     def _generate_unique_code(self, session, length: int = 6) -> str:
@@ -78,3 +93,19 @@ class GameService:
             existing = session.exec(select(Game).where(Game.join_code == code)).first()
             if existing is None:
                 return code
+
+    def _assign_continent(self, session, game_id: int) -> str:
+        continents = ["Europe", "Asie", "Afrique", "Amerique"]
+        taken = {
+            row[0]
+            for row in session.exec(
+                select(Player.continent)
+                .where(Player.game_id == game_id)
+                .where(Player.continent.is_not(None))
+            )
+            if row[0]
+        }
+        available = [continent for continent in continents if continent not in taken]
+        if not available:
+            raise ValueError("No continents available for this game")
+        return random.choice(available)
