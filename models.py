@@ -22,11 +22,22 @@ class Participant(SQLModel, table=True):
     game_id: int = Field(foreign_key="game.id")
     name: str = Field(sa_column=Column("name", String, index=True))
     is_host: bool = Field(default=False)
+    continent: str = Field(sa_column=Column("continent", String, index=True))
 
     game: Optional[Game] = Relationship(back_populates="participants")
 
     def __repr__(self) -> str:
         return f"<Participant(name={self.name}, game_id={self.game_id}, is_host={self.is_host})>"
+
+    def pick_random_continent(self):
+        continents = ["Europe", "Asie", "Afrique", "Amerique"]
+        taken_continents = {p.continent for p in self.game.participants if p.continent}
+        available_continents = [c for c in continents if c not in taken_continents]
+        import random
+        self.continent = random.choice(available_continents)
+        if not self.continent:
+            raise ValueError("No continents available")
+            
 
 
 def init_db():

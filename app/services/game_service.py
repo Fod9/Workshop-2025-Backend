@@ -44,6 +44,7 @@ class GameService:
                 raise ValueError("Name already taken in this game")
 
             participant = Participant(game_id=game.id, name=participant_name, is_host=False)
+            participant.pick_random_continent()
             session.add(participant)
             session.commit()
             session.refresh(game)
