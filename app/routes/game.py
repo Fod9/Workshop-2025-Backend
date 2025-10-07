@@ -42,6 +42,9 @@ async def join_game(payload: GameJoinPayload):
     game_service = GameService()
     try:
         game = game_service.join_game_by_code(payload.join_code, payload.name)
+
+        await manager.connect(websocket, game.id)
+        await manager.broadcast(f"{payload.name} joined the game", game.id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"status": "success", "data": game}
