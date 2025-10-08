@@ -144,7 +144,7 @@ class GameService:
             if player is None:
                 raise ValueError("Player not found in this game")
 
-            if not player.is_host:
+            if  player.is_host:
                 raise ValueError("Host cannot leave the game. Consider deleting the game instead.")
 
             session.delete(player)
