@@ -1,4 +1,6 @@
-from typing import List, Dict
+from typing import Dict, List
+import asyncio
+import json
 from fastapi import WebSocket
 
 class ConnectionManager():
@@ -23,11 +25,33 @@ class ConnectionManager():
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
 
-    async def broadcast(self, message: str, game_id: int):
+    async def _chronometer_task(self, game_id: int, duration: int):
+        for remaining in range(duration, 0, -1):
+            await self.broadcast(
+                {
+                    "type": "chronometer",
+                    "remaining": remaining,
+                },
+                game_id,
+            )
+            await asyncio.sleep(1)
+        await self.broadcast(
+            {
+                "type": "chronometer",
+                "remaining": 0,
+            },
+            game_id,
+        )
+
+    async def initalize_chronometer(self, game_id: int, duration: int):
+        asyncio.create_task(self._chronometer_task(game_id, duration))
+
+    async def broadcast(self, message: dict | str, game_id: int):
+        payload = message if isinstance(message, str) else json.dumps(message)
         if game_id in self.active_connections:
             for websocket, player_name in self.active_connections[game_id]:
-                print(f"Sending to {player_name}: {message}")  # Debugging line
-                await websocket.send_text(message)
+                print(f"Sending to {player_name}: {payload}")  # Debugging line
+                await websocket.send_text(payload)
     
     def get_player_name(self, websocket: WebSocket) -> str:
         for connections in self.active_connections.values():

@@ -128,6 +128,39 @@ class GameService:
 
         return joined_game
 
+    async def leave_game_by_code(self, game_id: int, player_id: int, manager: "ConnectionManager") -> Game:
+        with self.db_service.session() as session:
+            game = session.exec(
+                select(Game).where(Game.id == game_id)
+            ).first()
+            if game is None:
+                raise ValueError("Invalid game ID")
+
+            player = session.exec(
+                select(Player)
+                .where(Player.game_id == game.id)
+                .where(Player.id == player_id)
+            ).first()
+            if player is None:
+                raise ValueError("Player not found in this game")
+
+            if not player.is_host:
+                raise ValueError("Host cannot leave the game. Consider deleting the game instead.")
+
+            session.delete(player)
+            session.commit()
+            session.refresh(game)
+            session.refresh(game, attribute_names=["players"])
+            player_payload = PlayerRead.model_validate(player).model_dump()
+            json_content = json.dumps(
+                {
+                    "type": "player_left",
+                    "data": player_payload,
+                }
+            )
+            await manager.broadcast(json_content, game.id)
+            return game
+
     def delete_game(self, join_code: str, host_name: str) -> Game:
         join_code = join_code.strip().upper()
         with self.db_service.session() as session:
@@ -151,7 +184,12 @@ class GameService:
             if game is None:
                 raise ValueError("Invalid game ID")
 
+            if len(game.players) < 1:
+                raise ValueError("At least 4 players are required to continue the game")
+
             game.stage += 1
+            if game.stage == 1:
+                await manager.initalize_chronometer(game_id, duration=60*30)
             session.add(game)
             session.commit()
             session.refresh(game)

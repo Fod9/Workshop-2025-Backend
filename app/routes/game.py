@@ -18,6 +18,10 @@ class GameJoinPayload(BaseModel):
     join_code: str
     name: str
 
+class GameLeavePayload(BaseModel):
+    game_id: int
+    player_id: int
+
 
 @router.post("/create")
 async def create_game(payload: GameCreatePayload):
@@ -53,6 +57,15 @@ async def join_game(payload: GameJoinPayload):
     data["websocket_url"] = f"/game/ws/{game.id}"
 
     return {"status": "success", "data": data}
+
+@router.post("/leave")
+async def leave_game(payload: GameLeavePayload):
+    game_service = GameService()
+    try:
+        game = await game_service.leave_game_by_code(payload.game_id, payload.player_id, manager)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "success", "data": game}
 
 @router.post("/continue/{game_id}")
 async def continue_game(game_id: int):
