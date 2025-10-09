@@ -128,7 +128,7 @@ class GameService:
 
         return joined_game
 
-    async def leave_game_by_code(self, game_id: int, player_id: int, manager: "ConnectionManager") -> Game:
+    async def leave_game(self, game_id: int, player_id: int, manager: "ConnectionManager") -> Game:
         with self.db_service.session() as session:
             game = session.exec(
                 select(Game).where(Game.id == game_id)

@@ -19,6 +19,10 @@ class GameJoinPayload(BaseModel):
     join_code: str
     name: str
 
+class GameLeavePayload(BaseModel):
+    game_id: int
+    player_id: int
+
 
 @router.post("/create")
 async def create_game(payload: GameCreatePayload):
@@ -60,6 +64,17 @@ async def continue_game(game_id: int):
     game_service = GameService()
     try:
         game = await game_service.continue_game(game_id, manager)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    game_read = GameRead.model_validate(game)
+    return {"status": "success", "data": game_read.model_dump()}
+
+
+@router.post("/leave")
+async def leave_game(payload: GameLeavePayload):
+    game_service = GameService()
+    try:
+        game = await game_service.leave_game(payload.game_id, payload.player_id, manager)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     game_read = GameRead.model_validate(game)
