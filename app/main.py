@@ -7,9 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 #cors settings
 origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "*"
+    "http://localhost:5173",  # Vite dev server
+    "http://127.0.0.1:5173",  # Vite dev server
+    "http://localhost:3000",  # Docker frontend
+    "http://127.0.0.1:3000",  # Docker frontend
+    "http://frontend:3000",   # Docker internal network
+    "https://escape-game.pytom-hub.com"
 ]
 
 db_service = DBService()
@@ -26,7 +29,7 @@ app.add_middleware(
 )
 
 
-app.include_router(game_router)
+app.include_router(game_router, prefix="/api")
 
 
 #route to delete database - for testing purposes only
